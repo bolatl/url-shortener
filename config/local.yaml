@@ -1,0 +1,10 @@
+# config file for local
+env: "local"  # environment name
+storage_path: "./storage/storage.db"  # path to the storage file
+http_server:
+  address: "localhost:8082"  # address to listen on
+  timeout: 4s  # timeout for the server
+  idle_timeout: 60s  # idle timeout for the server
+  user: "myuser"
+  password: "mypass"
+  
