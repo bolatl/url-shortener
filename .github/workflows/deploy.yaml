@@ -11,7 +11,10 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
+      # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       #root@SERVER_IP_ADDRESS -- need to write the ip of server in the next Host field
+      # after that you need to set up repo secrets in the github settings: Deploy ssh key(private) and
+      # authorization passwords(don't forget to keep it)
       HOST: root@5.005.005.005
       DEPLOY_DIRECTORY: /root/apps/url-shortener
       CONFIG_PATH: /root/apps/url-shortener/config/prod.yaml
