@@ -1,6 +1,6 @@
 # URL Shortener
 
-A simple, fast, and secure URL shortener service built with Go. This service allows you to shorten long URLs into manageable aliases and redirect users to the original URLs.
+A simple, fast, and secure URL shortener service built with Go. This service allows you to shorten long URLs into manageable aliases and redirect users to the original URLs. It integrates with a separate **SSO gRPC service** for authentication and authorization (e.g. admin checks).
 
 ## Features
 
@@ -9,6 +9,7 @@ A simple, fast, and secure URL shortener service built with Go. This service all
 - **Redirect**: Seamlessly redirect users to original URLs
 - **Delete URLs**: Remove shortened URLs by alias
 - **Basic Authentication**: Secure endpoints with HTTP Basic Auth
+- **SSO gRPC integration**: Connects to an SSO (auth) service over gRPC for user/admin checks (retries and logging built-in)
 - **SQLite Storage**: Lightweight database for URL storage
 - **Structured Logging**: Comprehensive logging with different formats for different environments
 - **RESTful API**: Clean REST API design
@@ -17,6 +18,7 @@ A simple, fast, and secure URL shortener service built with Go. This service all
 
 - Go 1.24.0 or higher
 - SQLite3 (included with Go SQLite driver)
+- **SSO gRPC service** running and reachable (see [SSO integration](#sso-integration) below)
 
 ## Installation
 
@@ -56,12 +58,23 @@ http_server:
   idle_timeout: 60s  # Idle connection timeout
   user: "myuser"  # Basic Auth username
   password: "mypass"  # Basic Auth password (can be set via HTTP_SERVER_PASSWORD env var)
+client:
+  sso:
+    address: "localhost:44044"  # SSO gRPC server address
+    timeout: 3s  # gRPC call timeout
+    retriesCount: 3  # Retries on retryable errors
+app_secret: "your-app-secret"  # Can be set via APP_SECRET env var (required)
 ```
 
 ### Environment Variables
 
 - `CONFIG_PATH`: Path to configuration file (default: `config/local.yaml`)
 - `HTTP_SERVER_PASSWORD`: Override password from config file
+- `APP_SECRET`: Application secret (required if not set in config)
+
+## SSO integration
+
+The URL shortener talks to a separate **SSO gRPC service** for authentication and authorization. The SSO service must be running and registered in config under `client.sso` (address, timeout, retriesCount). The client uses the SSO Auth API (e.g. `IsAdmin`) with retries and structured logging. Ensure the SSO server is started first and that `client.sso.address` matches your SSO gRPC listen address.
 
 ## Usage
 
@@ -147,6 +160,9 @@ URL-shortener/
 │   └── url-shortener/          # Application entry point
 │       └── main.go
 ├── internal/
+│   ├── clients/
+│   │   └── sso/
+│   │       └── grpc/           # SSO gRPC client (Auth API, retries, logging)
 │   ├── config/                  # Configuration management
 │   ├── http-server/
 │   │   ├── handlers/            # HTTP handlers
@@ -210,15 +226,6 @@ The project includes a GitHub Actions workflow for automated deployment. Configu
 
 - `DEPLOY_SSH_KEY`: Private SSH key for server access
 - `AUTH_PASS`: HTTP server password for production
+- `APP_SECRET`: Application secret (used with SSO)
 
-Update the `HOST` environment variable in `.github/workflows/deploy.yaml` with your server IP address.
-
-## Development
-
-### Adding New Features
-
-1. Follow the existing project structure
-2. Add handlers in `internal/http-server/handlers/`
-3. Add storage methods in `internal/storage/`
-4. Write tests for new functionality
-5. Update this README if adding new endpoints
+Update the `HOST` environment variable in `.github/workflows/deploy.yaml` with your server IP address. Ensure the SSO gRPC service is deployed and that `client.sso.address` in your config points to it.
